@@ -11,8 +11,8 @@ class Settings:
     max_wait: int = 259200  # ignored if not using spot instances
 
     # location in the bucket of the input data used for training:
-    input_data_path: str = ""
-    bucket = ""
+    input_data_path: str = "s3://sagemaker-ca-central-1-630933869751/landcover_semantic_segmentation_input_dataset/"
+    bucket = "sagemaker-ca-central-1-630933869751"
 
     # training parameters (defaults)
     max_epochs = 26
