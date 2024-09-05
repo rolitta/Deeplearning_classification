@@ -1,4 +1,6 @@
 import os
+import subprocess
+
 
 import sagemaker
 from sagemaker.workflow.pipeline import Pipeline
@@ -49,10 +51,17 @@ class SagemakerPipeline:
 
         self.input_data_uri = input_data_uri
         self.output_uri = output_uri
-        if self.local_mode:
+                # check for GPU:
+        try:
+            subprocess.check_output("nvidia-smi")
+            gpu = True
+        except Exception:
+            gpu = False
+        if self.local_mode & gpu:
             self.gpu_instance = "local_gpu"
         else:
             self.gpu_instance = Settings().gpu_instance
+
         self.sm_execution_role_arn = sm_execution_role_arn
 
         # format parameters to allow configuration through the UI and hyperparameter jobs

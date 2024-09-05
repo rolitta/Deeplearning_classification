@@ -11,7 +11,7 @@ import torch.optim.lr_scheduler
 from lightning.pytorch import Trainer
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from models.model import DLModel
+from models.model import UNet
 
 from datasets.datamodule import DataModule
 
@@ -89,10 +89,10 @@ def train_model(
     )
 
     if resume:
-        model = DLModel.load_from_checkpoint(resume)
+        model = UNet.load_from_checkpoint(resume)
     else:
         data_module.setup("fit")
-        model = DLModel()
+        model = UNet()
 
     tb_logger = TensorBoardLogger(tensorboard_dir, name="lightning_logs")
     extra_params = {}

@@ -9,7 +9,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 import lightning as L
 import random
-from tensorflow.keras.utils import to_categorical
 
 class LandCoverDataset(Dataset):
     """Custom Dataset class to handle land cover image patches and their corresponding labels."""
@@ -30,9 +29,9 @@ class LandCoverDataset(Dataset):
         return image, label
 
 
-class LandCoverDataModule(L.LightningDataModule):
+class DataModule(L.LightningDataModule):
     def __init__(self, dataset_root_folder, dataset_name, batch_size=32, patch_size=256, test_size=0.15, random_state=100):
-        super(LandCoverDataModule, self).__init__()
+        super(DataModule, self).__init__()
         self.dataset_root_folder = dataset_root_folder
         self.dataset_name = dataset_name
         self.batch_size = batch_size
@@ -90,17 +89,18 @@ class LandCoverDataModule(L.LightningDataModule):
         self.image_dataset = np.array(self.image_dataset)
         self.mask_dataset = np.array(self.mask_dataset)
 
-        # Convert RGB masks to categorical labels
+        # Convert RGB masks to label indices
         labels = [self.rgb_to_label(mask) for mask in self.mask_dataset]
         labels = np.array(labels)
         labels = np.expand_dims(labels, axis=3)
 
-        # Convert labels to categorical format
-        labels_categorical_dataset = to_categorical(labels, num_classes=len(self.class_rgb))
+        # Convert labels to categorical format using PyTorch
+        labels_categorical_dataset = torch.nn.functional.one_hot(torch.tensor(labels, dtype=torch.long), num_classes=len(self.class_rgb))
+        labels_categorical_dataset = labels_categorical_dataset.squeeze(3)  # Remove the singleton dimension added by one_hot
 
         # Split the data into training and test sets
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            self.image_dataset, labels_categorical_dataset, test_size=self.test_size, random_state=self.random_state
+            self.image_dataset, labels_categorical_dataset.numpy(), test_size=self.test_size, random_state=self.random_state
         )
 
         # Convert to PyTorch datasets
