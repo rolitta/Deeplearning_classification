@@ -84,7 +84,8 @@ def train_model(
 
     # Data loading code
     data_module = DataModule(
-        data_dir=str(data_folder),
+        dataset_root_folder = str(data_folder),
+        dataset_name = 'landcover_semantic_segmentation_input_dataset',
         batch_size=batch_size,
     )
 
