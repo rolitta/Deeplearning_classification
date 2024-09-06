@@ -17,13 +17,37 @@ class LandCoverDataset(Dataset):
         self.images = images
         self.labels = labels
         self.transform = transform
+        self.pached_images =[]
+        for image_type in ['images', 'masks']:
+            image_extension = 'jpg' if image_type == 'images' else 'png'
+            for tile_id in range(1, 8):
+                for image_id in range(1, 20):
+                    image_path = os.path.join(self.dataset_root_folder, self.dataset_name, f'Tile {tile_id}/{image_type}/image_part_00{image_id}.{image_extension}')
+                    image = cv2.imread(image_path, 1)
+                    if image is not None:
+                        if image_type == 'masks':
+                            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                        size_x = (image.shape[1] // self.patch_size) * self.patch_size
+                        size_y = (image.shape[0] // self.patch_size) * self.patch_size
+                        image = Image.fromarray(image).crop((0, 0, size_x, size_y))
+                        image = np.array(image)
+                        patched_images = patchify(image, (self.patch_size, self.patch_size, 3), step=self.patch_size) 
+                        patched_images = np.reshape(self.patched_images, shape=(-1, 1))
+                        
 
     def __len__(self):
-        return len(self.images)
+        return len(self.patched_images)
 
     def __getitem__(self, idx):
         image = self.images[idx]
         label = self.labels[idx]
+        patch = self.patched_images[idx]
+        if image_type == 'images':
+            patch = self.minmaxscaler.fit_transform(patch.reshape(-1, patch.shape[-1])).reshape(patch.shape)
+            self.image_dataset.append(patch)
+        elif image_type == 'masks':
+            self.mask_dataset.append(patch)
+
         if self.transform:
             image = self.transform(image)
         return image, label
@@ -91,6 +115,9 @@ class DataModule(L.LightningDataModule):
 
         # Convert RGB masks to label indices
         labels = [self.rgb_to_label(mask) for mask in self.mask_dataset]
+        labels = np.array(labels)
+ 
+
         labels = np.array(labels)
         labels = np.expand_dims(labels, axis=3)
 
